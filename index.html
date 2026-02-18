@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FocusFlow Multi-Pro</title>
+    <style>
+        :root {
+            --accent: AccentColor; 
+            --fallback-blue: #0078D4;
+            --win-bg: #1a1a1a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            background-color: var(--win-bg);
+            color: white;
+            font-family: "Segoe UI Variable Display", sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .add-btn {
+            background: var(--accent, var(--fallback-blue));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #timerContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        .timer-card {
+            background: var(--glass);
+            backdrop-filter: blur(30px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+
+        .timer-card:hover { transform: translateY(-4px); border-color: rgba(255,255,255,0.2); }
+
+        .timer-name {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 1.4rem;
+            font-weight: 700;
+            outline: none;
+            margin-bottom: 5px;
+        }
+
+        .time-display {
+            font-size: 4rem;
+            font-weight: 800;
+            margin: 10px 0;
+            font-variant-numeric: tabular-nums;
+            color: var(--accent, var(--fallback-blue));
+        }
+
+        .settings-box {
+            background: rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-size: 0.85rem;
+        }
+
+        .row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; gap: 8px; }
+
+        select, input[type="number"] {
+            background: #2b2b2b;
+            color: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 4px;
+            flex-grow: 1;
+        }
+
+        .preview-btn {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .preview-btn:hover { background: rgba(255,255,255,0.1); }
+
+        .card-controls { display: flex; gap: 10px; margin-top: 15px; }
+
+        .btn-main {
+            flex: 2;
+            background: var(--accent, var(--fallback-blue));
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .btn-del {
+            flex: 1;
+            background: rgba(255, 69, 58, 0.15);
+            color: #ff453a;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>FocusFlow <span style="font-weight: 300; opacity: 0.7;">Multi</span></h1>
+        <button class="add-btn" onclick="addNewTimer()">+ New Timer</button>
+    </div>
+
+    <div id="timerContainer"></div>
+
+    <script>
+        const container = document.getElementById('timerContainer');
+        
+        const sounds = [
+            { name: "Modern Chime", url: "https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" },
+            { name: "Success Ping", url: "https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3" },
+            { name: "Digital Beep", url: "https://assets.mixkit.co/active_storage/sfx/951/951-preview.mp3" },
+            { name: "Soft Bell", url: "https://assets.mixkit.co/active_storage/sfx/2211/2211-preview.mp3" },
+            { name: "Classic Alarm", url: "https://assets.mixkit.co/active_storage/sfx/1110/1110-preview.mp3" },
+            { name: "Tech Confirm", url: "https://assets.mixkit.co/active_storage/sfx/1113/1113-preview.mp3" },
+            { name: "Bright Notification", url: "https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3" },
+            { name: "Minimal Pop", url: "https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3" },
+            { name: "Echo Bell", url: "https://assets.mixkit.co/active_storage/sfx/1057/1057-preview.mp3" },
+            { name: "Guitar Chord", url: "https://assets.mixkit.co/active_storage/sfx/2357/2357-preview.mp3" }
+        ];
+
+        function addNewTimer() {
+            const id = Date.now();
+            const card = document.createElement('div');
+            card.className = 'timer-card';
+            card.id = `card-${id}`;
+            
+            const soundOptions = sounds.map(s => `<option value="${s.url}">${s.name}</option>`).join('');
+
+            card.innerHTML = `
+                <input type="text" class="timer-name" value="Focus Task" spellcheck="false">
+                <div class="time-display" id="display-${id}">25:00</div>
+                
+                <div class="settings-box">
+                    <div class="row">
+                        <span>Duration (Min)</span>
+                        <input type="number" id="input-${id}" value="25" min="1" oninput="sync(${id})">
+                    </div>
+                    <div class="row">
+                        <span>Sound</span>
+                        <select id="sound-${id}">${soundOptions}</select>
+                        <button class="preview-btn" onclick="preview(${id})">▶</button>
+                    </div>
+                </div>
+
+                <div class="card-controls">
+                    <button class="btn-main" id="btn-${id}" onclick="toggle(${id})">Start</button>
+                    <button class="btn-del" onclick="remove(${id})">Delete</button>
+                </div>
+                <audio id="audio-${id}" preload="auto"></audio>
+            `;
+            
+            container.appendChild(card);
+            card.dataset.timeLeft = 25 * 60;
+            card.dataset.isRunning = "false";
+        }
+
+        function sync(id) {
+            const card = document.getElementById(`card-${id}`);
+            const input = document.getElementById(`input-${id}`);
+            if (card.dataset.isRunning === "false") {
+                card.dataset.timeLeft = input.value * 60;
+                updateDisplay(id);
+            }
+        }
+
+        function updateDisplay(id) {
+            const card = document.getElementById(`card-${id}`);
+            const display = document.getElementById(`display-${id}`);
+            const t = parseInt(card.dataset.timeLeft);
+            const m = Math.floor(t / 60);
+            const s = t % 60;
+            display.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function preview(id) {
+            const audio = document.getElementById(`audio-${id}`);
+            const picker = document.getElementById(`sound-${id}`);
+            audio.src = picker.value;
+            audio.play();
+        }
+
+        function toggle(id) {
+            const card = document.getElementById(`card-${id}`);
+            const btn = document.getElementById(`btn-${id}`);
+            const audio = document.getElementById(`audio-${id}`);
+            const picker = document.getElementById(`sound-${id}`);
+
+            if (card.dataset.isRunning === "true") {
+                clearInterval(card.dataset.interval);
+                card.dataset.isRunning = "false";
+                btn.innerText = "Resume";
+            } else {
+                card.dataset.isRunning = "true";
+                btn.innerText = "Pause";
+                audio.src = picker.value;
+                
+                const interval = setInterval(() => {
+                    let time = parseInt(card.dataset.timeLeft);
+                    if (time > 0) {
+                        time--;
+                        card.dataset.timeLeft = time;
+                        updateDisplay(id);
+                    } else {
+                        clearInterval(interval);
+                        audio.play();
+                        card.dataset.isRunning = "false";
+                        btn.innerText = "Restart";
+                    }
+                }, 1000);
+                card.dataset.interval = interval;
+            }
+        }
+
+        function remove(id) {
+            const card = document.getElementById(`card-${id}`);
+            clearInterval(card.dataset.interval);
+            card.remove();
+        }
+
+        addNewTimer();
+    </script>
+</body>
+</html>
